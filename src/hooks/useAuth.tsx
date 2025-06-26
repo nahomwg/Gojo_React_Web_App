@@ -79,77 +79,123 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    console.log('Starting sign in process...');
+    setLoading(true);
     
-    if (error) {
-      console.error('Sign in error:', error);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error('Sign in error:', error);
+        throw error;
+      }
+      
+      console.log('Sign in successful:', data.user?.id);
+      
+      // Wait for session to be established
+      if (data.session) {
+        console.log('Session established, fetching profile...');
+        
+        // Small delay to ensure session is fully established
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify session is available
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          console.log('Session confirmed, getting profile...');
+          await getProfile();
+        } else {
+          throw new Error('Session not established properly');
+        }
+      } else {
+        throw new Error('No session returned from sign in');
+      }
+    } catch (error) {
+      setLoading(false);
       throw error;
     }
-    
-    console.log('Sign in successful:', data.user?.id);
   };
 
   const signUp = async (email: string, password: string, name: string, phone: string, role: 'renter' | 'agent') => {
     console.log('Starting signup process...');
+    setLoading(true);
     
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: undefined // Disable email confirmation
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: undefined // Disable email confirmation
+        }
+      });
+
+      if (error) {
+        console.error('Auth signup error:', error);
+        throw error;
       }
-    });
 
-    if (error) {
-      console.error('Auth signup error:', error);
-      throw error;
-    }
+      if (data.user && data.session) {
+        console.log('User created:', data.user.id);
+        
+        // Wait for session to be established
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Verify session is available
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          throw new Error('Session not established after signup');
+        }
+        
+        try {
+          // Create user profile
+          const { data: profile, error: profileError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              role,
+              name,
+              phone,
+            })
+            .select()
+            .single();
 
-    if (data.user && data.session) {
-      console.log('User created:', data.user.id);
-      
-      // Small delay to ensure session is established
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      try {
-        // Create user profile
-        const { data: profile, error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: data.user.id,
-            role,
-            name,
-            phone,
-          })
-          .select()
-          .single();
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          // Clean up auth user if profile creation fails
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Clean up auth user if profile creation fails
+            await supabase.auth.signOut();
+            throw profileError;
+          }
+          
+          console.log('Profile created:', profile);
+          setUser(profile);
+        } catch (profileError) {
+          console.error('Profile creation failed:', profileError);
           await supabase.auth.signOut();
           throw profileError;
         }
-        
-        console.log('Profile created:', profile);
-        setUser(profile);
-      } catch (profileError) {
-        console.error('Profile creation failed:', profileError);
-        await supabase.auth.signOut();
-        throw profileError;
+      } else if (data.user && !data.session) {
+        throw new Error('Please check your email to confirm your account');
       }
-    } else if (data.user && !data.session) {
-      throw new Error('Please check your email to confirm your account');
+    } catch (error) {
+      setLoading(false);
+      throw error;
     }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    setUser(null);
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateProfile = async (updates: Partial<User>) => {
