@@ -13,8 +13,12 @@ export interface Listing {
   title: string;
   description: string;
   location: string;
+  subcity?: string;
   price: number;
   bedrooms: number;
+  bathrooms?: number;
+  area_sqm?: number;
+  property_type?: string;
   features: string[];
   photos: string[];
   created_at: string;
@@ -67,5 +71,6 @@ export interface SearchFilters {
   minPrice?: number;
   maxPrice?: number;
   bedrooms?: number;
+  propertyType?: string;
   features?: string[];
 }

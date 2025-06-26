@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Bed, DollarSign, Heart, MessageCircle, User } from 'lucide-react';
+import { MapPin, Bed, DollarSign, Heart, MessageCircle, User, Bath, Maximize, Building2 } from 'lucide-react';
 import { Listing } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
@@ -53,13 +53,13 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden group">
       {/* Image */}
       <div className="relative">
         <img
           src={listing.photos[0] || 'https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg'}
           alt={listing.title}
-          className="w-full h-48 object-cover"
+          className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
         />
         
         {/* Save button for renters */}
@@ -67,57 +67,76 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
           <button
             onClick={handleSaveToggle}
             disabled={saving}
-            className={`absolute top-3 right-3 p-2 rounded-full transition-colors ${
+            className={`absolute top-4 right-4 p-2 rounded-full transition-all ${
               isSaved 
-                ? 'bg-red-500 text-white' 
-                : 'bg-white text-gray-600 hover:bg-gray-100'
+                ? 'bg-red-500 text-white shadow-lg' 
+                : 'bg-white/90 backdrop-blur-sm text-gray-600 hover:bg-white hover:shadow-md'
             }`}
           >
             <Heart className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
           </button>
         )}
 
+        {/* Property Type Badge */}
+        {listing.property_type && (
+          <div className="absolute top-4 left-4">
+            <span className="bg-primary-600 text-white px-3 py-1 rounded-full text-xs font-medium capitalize">
+              {listing.property_type}
+            </span>
+          </div>
+        )}
+
         {/* Price */}
-        <div className="absolute bottom-3 right-3">
-          <span className="bg-white text-gray-900 px-3 py-1 rounded-full text-sm font-semibold shadow-sm">
+        <div className="absolute bottom-4 right-4">
+          <span className="bg-white/95 backdrop-blur-sm text-gray-900 px-4 py-2 rounded-full text-sm font-bold shadow-sm">
             {formatPrice(listing.price)}/month
           </span>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="p-6">
         <Link to={`/listing/${listing.id}`} className="block">
           <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-primary-600 transition-colors line-clamp-2">
             {listing.title}
           </h3>
         </Link>
 
-        <div className="flex items-center text-gray-600 mb-3">
-          <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
-          <span className="text-sm">{listing.location}</span>
+        <div className="flex items-center text-gray-600 mb-4">
+          <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
+          <span className="text-sm">
+            {listing.subcity && `${listing.subcity}, `}{listing.location}
+          </span>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
           <div className="flex items-center gap-4">
-            <div className="flex items-center">
-              <Bed className="h-4 w-4 mr-1" />
+            <div className="flex items-center gap-1">
+              <Bed className="h-4 w-4" />
               <span>{listing.bedrooms} bed</span>
             </div>
-            <div className="flex items-center">
-              <DollarSign className="h-4 w-4 mr-1" />
-              <span>{formatPrice(listing.price)}</span>
-            </div>
+            {listing.bathrooms && (
+              <div className="flex items-center gap-1">
+                <Bath className="h-4 w-4" />
+                <span>{listing.bathrooms} bath</span>
+              </div>
+            )}
+            {listing.area_sqm && (
+              <div className="flex items-center gap-1">
+                <Maximize className="h-4 w-4" />
+                <span>{listing.area_sqm}m²</span>
+              </div>
+            )}
           </div>
         </div>
 
-        <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+        <p className="text-sm text-gray-600 line-clamp-2 mb-4">
           {listing.description}
         </p>
 
         {/* Features */}
         {listing.features.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
+          <div className="flex flex-wrap gap-1 mb-4">
             {listing.features.slice(0, 3).map((feature, index) => (
               <span
                 key={index}
@@ -135,19 +154,22 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
         )}
 
         {/* Agent info and actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center gap-2">
             {listing.user?.photo_url ? (
               <img
                 src={listing.user.photo_url}
                 alt={listing.user.name}
-                className="w-6 h-6 rounded-full object-cover"
+                className="w-8 h-8 rounded-full object-cover"
               />
             ) : (
-              <User className="h-4 w-4 text-gray-400" />
+              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-gray-400" />
+              </div>
             )}
-            <div className="text-xs text-gray-500">
-              {listing.user?.name || 'Agent'}
+            <div className="text-sm">
+              <p className="font-medium text-gray-900">{listing.user?.name || 'Agent'}</p>
+              <p className="text-gray-500 text-xs">Property Agent</p>
             </div>
           </div>
           
@@ -155,14 +177,14 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
             {user && user.role === 'renter' && (
               <Link
                 to={`/message/${listing.user_id}?listing=${listing.id}`}
-                className="text-primary-600 hover:text-primary-700 p-1"
+                className="text-primary-600 hover:text-primary-700 p-2 hover:bg-primary-50 rounded-lg transition-colors"
               >
                 <MessageCircle className="h-4 w-4" />
               </Link>
             )}
             <Link
               to={`/listing/${listing.id}`}
-              className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+              className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
             >
               View Details
             </Link>
