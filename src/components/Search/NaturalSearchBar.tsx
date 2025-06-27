@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Sparkles } from 'lucide-react';
 import { SearchFilters } from '../../types';
 
 interface NaturalSearchBarProps {
@@ -76,50 +76,62 @@ const NaturalSearchBar: React.FC<NaturalSearchBarProps> = ({
     }
   };
 
+  const exampleSearches = [
+    "2-bedroom in Bole under 20K ETB",
+    "Apartment near CMC",
+    "3-bedroom house in Yeka",
+    "Villa in Gulele"
+  ];
+
   return (
-    <form onSubmit={handleSearch} className="w-full max-w-4xl mx-auto">
-      <div className="relative">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={placeholder}
-          className="w-full px-6 py-4 pr-14 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          disabled={isLoading || !query.trim()}
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-primary-600 text-white p-3 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <Search className="h-5 w-5" />
-          )}
-        </button>
-      </div>
+    <div className="w-full max-w-4xl mx-auto">
+      <form onSubmit={handleSearch} className="relative group">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-rose-500 to-pink-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition-opacity duration-300"></div>
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 p-6">
+                <Sparkles className="h-6 w-6 text-rose-500" />
+              </div>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={placeholder}
+                className="flex-1 px-2 py-6 text-lg bg-transparent border-0 focus:ring-0 focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                disabled={isLoading}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !query.trim()}
+                className="flex-shrink-0 m-3 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white p-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <Search className="h-6 w-6" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
       
       {/* Example searches */}
-      <div className="mt-4 flex flex-wrap gap-2 justify-center">
-        <span className="text-sm text-gray-500">Try:</span>
-        {[
-          "2-bedroom in Bole under 20K ETB",
-          "Apartment near CMC",
-          "3-bedroom house in Yeka",
-          "Villa in Gulele"
-        ].map((example) => (
+      <div className="mt-6 flex flex-wrap gap-3 justify-center">
+        <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">Try:</span>
+        {exampleSearches.map((example) => (
           <button
             key={example}
             type="button"
             onClick={() => setQuery(example)}
-            className="text-sm text-primary-600 hover:text-primary-700 hover:underline"
+            className="text-sm bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-700 dark:text-gray-300 hover:text-rose-600 dark:hover:text-rose-400 px-4 py-2 rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:border-rose-300 dark:hover:border-rose-500 transition-all duration-200 hover:shadow-lg transform hover:scale-105"
           >
             "{example}"
           </button>
         ))}
       </div>
-    </form>
+    </div>
   );
 };
 
