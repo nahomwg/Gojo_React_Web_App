@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Eye, EyeOff } from 'lucide-react';
+import { Home, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const Signup = () => {
@@ -16,45 +16,114 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
   
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!formData.name.trim()) {
+      errors.name = 'Full name is required';
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters long';
+    }
+    
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required';
+    } else if (!/^[\+]?[0-9\s\-\(\)]{10,}$/.test(formData.phone.trim())) {
+      errors.phone = 'Please enter a valid phone number';
+    }
+    
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters long';
+    }
+    
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }));
+    
+    // Clear field error when user starts typing
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
-      setLoading(false);
-      return;
-    }
-
     try {
-      await signUp(formData.email, formData.password, formData.name, formData.phone, formData.role);
-      // Navigation will happen automatically when user state updates
+      console.log('📝 Attempting signup for:', formData.email, 'as', formData.role);
+      await signUp(
+        formData.email, 
+        formData.password, 
+        formData.name, 
+        formData.phone, 
+        formData.role
+      );
+      console.log('✅ Signup successful, navigating to dashboard');
       navigate('/dashboard');
     } catch (error: any) {
-      console.error('Signup error:', error);
-      setError(error.message || 'Failed to create account');
+      console.error('❌ Signup error:', error);
+      
+      // Handle specific error types
+      if (error.message.includes('User already registered')) {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else if (error.message.includes('Password should be at least 6 characters')) {
+        setError('Password must be at least 6 characters long.');
+      } else if (error.message.includes('Invalid email')) {
+        setError('Please enter a valid email address.');
+      } else if (error.message.includes('Failed to create profile')) {
+        setError('Account created but profile setup failed. Please try signing in.');
+      } else {
+        setError(error.message || 'Failed to create account. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const getPasswordStrength = (password: string) => {
+    if (password.length === 0) return { strength: 0, label: '', color: '' };
+    if (password.length < 6) return { strength: 1, label: 'Too short', color: 'text-red-500' };
+    if (password.length < 8) return { strength: 2, label: 'Weak', color: 'text-orange-500' };
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) return { strength: 3, label: 'Fair', color: 'text-yellow-500' };
+    return { strength: 4, label: 'Strong', color: 'text-green-500' };
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center px-4 py-8">
@@ -73,8 +142,9 @@ const Signup = () => {
         <div className="bg-white py-8 px-6 shadow-sm rounded-xl border">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-                {error}
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
@@ -88,7 +158,7 @@ const Signup = () => {
                 value={formData.role}
                 onChange={handleChange}
                 disabled={loading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:bg-gray-50"
               >
                 <option value="renter">Renter (Looking for property)</option>
                 <option value="agent">Agent (Listing properties)</option>
@@ -105,11 +175,15 @@ const Signup = () => {
                 type="text"
                 value={formData.name}
                 onChange={handleChange}
-                required
                 disabled={loading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:bg-gray-50 ${
+                  fieldErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 placeholder="Enter your full name"
               />
+              {fieldErrors.name && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.name}</p>
+              )}
             </div>
 
             <div>
@@ -122,11 +196,15 @@ const Signup = () => {
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
-                required
                 disabled={loading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:bg-gray-50 ${
+                  fieldErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 placeholder="Enter your email"
               />
+              {fieldErrors.email && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -139,11 +217,15 @@ const Signup = () => {
                 type="tel"
                 value={formData.phone}
                 onChange={handleChange}
-                required
                 disabled={loading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:bg-gray-50 ${
+                  fieldErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 placeholder="+251911234567"
               />
+              {fieldErrors.phone && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
+              )}
             </div>
 
             <div>
@@ -157,9 +239,10 @@ const Signup = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleChange}
-                  required
                   disabled={loading}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:bg-gray-50 ${
+                    fieldErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
                   placeholder="Create a password"
                 />
                 <button
@@ -175,6 +258,26 @@ const Signup = () => {
                   )}
                 </button>
               </div>
+              {formData.password && (
+                <div className="mt-1 flex items-center gap-2">
+                  <div className="flex-1 bg-gray-200 rounded-full h-1">
+                    <div 
+                      className={`h-1 rounded-full transition-all ${
+                        passwordStrength.strength === 1 ? 'w-1/4 bg-red-500' :
+                        passwordStrength.strength === 2 ? 'w-2/4 bg-orange-500' :
+                        passwordStrength.strength === 3 ? 'w-3/4 bg-yellow-500' :
+                        passwordStrength.strength === 4 ? 'w-full bg-green-500' : 'w-0'
+                      }`}
+                    />
+                  </div>
+                  <span className={`text-xs ${passwordStrength.color}`}>
+                    {passwordStrength.label}
+                  </span>
+                </div>
+              )}
+              {fieldErrors.password && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+              )}
             </div>
 
             <div>
@@ -188,9 +291,10 @@ const Signup = () => {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  required
                   disabled={loading}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50"
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:bg-gray-50 ${
+                    fieldErrors.confirmPassword ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
                   placeholder="Confirm your password"
                 />
                 <button
@@ -206,6 +310,15 @@ const Signup = () => {
                   )}
                 </button>
               </div>
+              {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                <div className="mt-1 flex items-center gap-1 text-green-600">
+                  <CheckCircle className="h-3 w-3" />
+                  <span className="text-xs">Passwords match</span>
+                </div>
+              )}
+              {fieldErrors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.confirmPassword}</p>
+              )}
             </div>
 
             <button
