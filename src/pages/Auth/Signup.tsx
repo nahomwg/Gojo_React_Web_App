@@ -104,7 +104,7 @@ const Signup = () => {
       console.error('❌ Signup error:', error);
       
       // Handle specific error types
-      if (error.message.includes('User already registered')) {
+      if (error.message.includes('User already exists') || error.message.includes('already registered')) {
         setError('An account with this email already exists. Please sign in instead.');
       } else if (error.message.includes('Password should be at least 6 characters')) {
         setError('Password must be at least 6 characters long.');
