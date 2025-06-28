@@ -3,10 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Create a placeholder client if environment variables are not set
-export const supabase = supabaseUrl && supabaseAnonKey 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : createClient('https://placeholder.supabase.co', 'placeholder-key');
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Missing Supabase environment variables. Please check your .env file.');
+}
+
+// Create Supabase client with auth configuration
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce'
+  }
+});
 
 export type Database = {
   public: {
@@ -40,9 +49,16 @@ export type Database = {
           title: string;
           description: string;
           location: string;
+          subcity?: string;
           price: number;
           bedrooms: number;
+          bathrooms?: number;
+          area_sqm?: number;
+          square_meters?: number;
+          property_type?: string;
+          type?: 'residential' | 'business';
           features: string[];
+          business_features?: string[];
           photos: string[];
           created_at: string;
         };
@@ -51,18 +67,32 @@ export type Database = {
           title: string;
           description: string;
           location: string;
+          subcity?: string;
           price: number;
           bedrooms: number;
+          bathrooms?: number;
+          area_sqm?: number;
+          square_meters?: number;
+          property_type?: string;
+          type?: 'residential' | 'business';
           features?: string[];
+          business_features?: string[];
           photos?: string[];
         };
         Update: {
           title?: string;
           description?: string;
           location?: string;
+          subcity?: string;
           price?: number;
           bedrooms?: number;
+          bathrooms?: number;
+          area_sqm?: number;
+          square_meters?: number;
+          property_type?: string;
+          type?: 'residential' | 'business';
           features?: string[];
+          business_features?: string[];
           photos?: string[];
         };
       };

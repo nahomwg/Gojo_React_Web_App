@@ -166,12 +166,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Password must be at least 6 characters long');
       }
 
-      // Create auth user
+      // Create auth user with email confirmation disabled
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: undefined // Disable email confirmation
+          emailRedirectTo: undefined, // Disable email confirmation
+          data: {
+            name: name.trim(),
+            phone: phone.trim(),
+            role: role
+          }
         }
       });
 
@@ -186,7 +191,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       console.log('✅ Auth user created:', authData.user.id);
 
-      // If we have a session, create the profile
+      // If we have a session (email confirmation disabled), create the profile
       if (authData.session) {
         console.log('📋 Creating user profile...');
         
@@ -211,7 +216,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.log('✅ User profile created:', profileData);
         setUser(profileData);
       } else {
-        throw new Error('No session created during signup - email confirmation may be required');
+        // If no session (email confirmation required), inform user
+        throw new Error('Please check your email and click the confirmation link to complete signup');
       }
       
     } catch (error) {
