@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Building2, Home, Briefcase, Users, Shield, TrendingUp, ArrowRight, Calendar, MapPin, Star, CheckCircle } from 'lucide-react';
+import { Search, Building2, Home as HomeIcon, Briefcase, Users, Shield, TrendingUp, ArrowRight, Calendar, MapPin, Star, CheckCircle } from 'lucide-react';
 import { SearchFilters, Listing } from '../types';
 import { supabase } from '../lib/supabase';
 import ListingCard from '../components/Listing/ListingCard';
@@ -52,9 +52,9 @@ const Home = () => {
 
   const residentialTypes = [
     { type: 'apartment', name: 'Apartments', icon: Building2, description: 'Modern apartments for long-term living' },
-    { type: 'house', name: 'Houses', icon: Home, description: 'Family homes with gardens and space' },
+    { type: 'house', name: 'Houses', icon: HomeIcon, description: 'Family homes with gardens and space' },
     { type: 'villa', name: 'Villas', icon: Star, description: 'Luxury villas with premium amenities' },
-    { type: 'studio', name: 'Studios', icon: Home, description: 'Compact studios perfect for singles' },
+    { type: 'studio', name: 'Studios', icon: HomeIcon, description: 'Compact studios perfect for singles' },
     { type: 'condominium', name: 'Condominiums', icon: Building2, description: 'Secure condos with shared facilities' }
   ];
 
@@ -103,7 +103,7 @@ const Home = () => {
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-2 shadow-xl border border-gray-200 dark:border-gray-700">
                 {[
                   { id: 'all', label: 'All Properties', icon: Building2 },
-                  { id: 'residential', label: 'Residential', icon: Home },
+                  { id: 'residential', label: 'Residential', icon: HomeIcon },
                   { id: 'commercial', label: 'Commercial', icon: Briefcase }
                 ].map((tab) => (
                   <button
@@ -205,7 +205,7 @@ const Home = () => {
           <div className="mb-16">
             <div className="flex items-center gap-3 mb-8">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl">
-                <Home className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <HomeIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Residential Properties</h3>
             </div>
