@@ -123,6 +123,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     
     try {
+      // Validate inputs
+      if (!email.trim() || !password) {
+        throw new Error('Email and password are required');
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,

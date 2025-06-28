@@ -47,6 +47,11 @@ const Login = () => {
         [name]: ''
       }));
     }
+    
+    // Clear general error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,6 +79,8 @@ const Login = () => {
         setError('Please check your email and click the confirmation link before signing in.');
       } else if (error.message.includes('Too many requests')) {
         setError('Too many login attempts. Please wait a moment before trying again.');
+      } else if (error.message.includes('User not found')) {
+        setError('No account found with this email address. Please sign up first.');
       } else {
         setError(error.message || 'Failed to sign in. Please try again.');
       }
@@ -87,22 +94,28 @@ const Login = () => {
     { type: 'Renter', email: 'renter@demo.com', password: 'demo123' }
   ];
 
+  const fillDemoAccount = (email: string, password: string) => {
+    setFormData({ email, password });
+    setError('');
+    setFieldErrors({});
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-8 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-rose-400/20 to-pink-600/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-3 group">
-            <div className="p-3 bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl shadow-xl group-hover:scale-105 transition-transform duration-200">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl group-hover:scale-105 transition-transform duration-200">
               <Home className="h-8 w-8 text-white" />
             </div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+            <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Gojo
             </span>
           </Link>
@@ -131,7 +144,7 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
-                className={`w-full px-4 py-4 border rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                className={`w-full px-4 py-4 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                   fieldErrors.email ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="Enter your email"
@@ -153,7 +166,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   disabled={loading}
-                  className={`w-full px-4 py-4 pr-12 border rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                  className={`w-full px-4 py-4 pr-12 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                     fieldErrors.password ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   placeholder="Enter your password"
@@ -179,7 +192,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white py-4 px-6 rounded-2xl focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-[1.02]"
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-4 px-6 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-[1.02]"
             >
               {loading ? (
                 <>
@@ -198,7 +211,7 @@ const Login = () => {
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-semibold transition-colors duration-200">
+              <Link to="/signup" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold transition-colors duration-200">
                 Sign up here
               </Link>
             </p>
@@ -209,11 +222,15 @@ const Login = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-4 font-medium">Demo Accounts (for testing)</p>
             <div className="grid grid-cols-2 gap-3 text-xs">
               {demoAccounts.map((account, index) => (
-                <div key={index} className="bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border border-gray-200 dark:border-gray-600">
+                <button
+                  key={index}
+                  onClick={() => fillDemoAccount(account.email, account.password)}
+                  className="bg-gray-50 dark:bg-gray-700 p-3 rounded-xl border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
                   <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{account.type}</p>
                   <p className="text-gray-600 dark:text-gray-400">{account.email}</p>
                   <p className="text-gray-600 dark:text-gray-400">{account.password}</p>
-                </div>
+                </button>
               ))}
             </div>
           </div>

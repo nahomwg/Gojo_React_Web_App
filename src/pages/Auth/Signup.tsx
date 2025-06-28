@@ -72,6 +72,11 @@ const Signup = () => {
         [name]: ''
       }));
     }
+    
+    // Clear general error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,6 +112,8 @@ const Signup = () => {
         setError('Please enter a valid email address.');
       } else if (error.message.includes('Failed to create profile')) {
         setError('Account created but profile setup failed. Please try signing in.');
+      } else if (error.message.includes('duplicate key value violates unique constraint')) {
+        setError('An account with this email already exists. Please sign in instead.');
       } else {
         setError(error.message || 'Failed to create account. Please try again.');
       }
@@ -131,33 +138,33 @@ const Signup = () => {
       label: 'Renter',
       description: 'Looking for property',
       icon: User,
-      color: 'from-blue-500 to-cyan-500'
+      color: 'from-green-500 to-emerald-500'
     },
     {
       value: 'agent',
       label: 'Agent',
       description: 'Listing properties',
       icon: UserCheck,
-      color: 'from-purple-500 to-pink-500'
+      color: 'from-blue-500 to-indigo-500'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-pink-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center px-4 py-8 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-rose-400/20 to-pink-600/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center space-x-3 group">
-            <div className="p-3 bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl shadow-xl group-hover:scale-105 transition-transform duration-200">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl group-hover:scale-105 transition-transform duration-200">
               <Home className="h-8 w-8 text-white" />
             </div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+            <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Gojo
             </span>
           </Link>
@@ -188,7 +195,7 @@ const Signup = () => {
                     onClick={() => setFormData(prev => ({ ...prev, role: option.value as 'renter' | 'agent' }))}
                     className={`p-4 rounded-2xl border-2 transition-all duration-200 ${
                       formData.role === option.value
-                        ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                     }`}
                   >
@@ -213,7 +220,7 @@ const Signup = () => {
                 value={formData.name}
                 onChange={handleChange}
                 disabled={loading}
-                className={`w-full px-4 py-4 border rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                className={`w-full px-4 py-4 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                   fieldErrors.name ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="Enter your full name"
@@ -234,7 +241,7 @@ const Signup = () => {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
-                className={`w-full px-4 py-4 border rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                className={`w-full px-4 py-4 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                   fieldErrors.email ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="Enter your email"
@@ -255,7 +262,7 @@ const Signup = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 disabled={loading}
-                className={`w-full px-4 py-4 border rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                className={`w-full px-4 py-4 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                   fieldErrors.phone ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="+251911234567"
@@ -277,7 +284,7 @@ const Signup = () => {
                   value={formData.password}
                   onChange={handleChange}
                   disabled={loading}
-                  className={`w-full px-4 py-4 pr-12 border rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                  className={`w-full px-4 py-4 pr-12 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                     fieldErrors.password ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   placeholder="Create a password"
@@ -329,7 +336,7 @@ const Signup = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   disabled={loading}
-                  className={`w-full px-4 py-4 pr-12 border rounded-2xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                  className={`w-full px-4 py-4 pr-12 border rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:bg-gray-50 dark:disabled:bg-gray-800 transition-all duration-200 text-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
                     fieldErrors.confirmPassword ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   placeholder="Confirm your password"
@@ -361,7 +368,7 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white py-4 px-6 rounded-2xl focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-[1.02]"
+              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-4 px-6 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-[1.02]"
             >
               {loading ? (
                 <>
@@ -380,7 +387,7 @@ const Signup = () => {
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Already have an account?{' '}
-              <Link to="/login" className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-semibold transition-colors duration-200">
+              <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold transition-colors duration-200">
                 Sign in here
               </Link>
             </p>
