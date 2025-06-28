@@ -19,6 +19,9 @@ export interface Listing {
   bathrooms?: number;
   area_sqm?: number;
   property_type?: string;
+  type?: 'residential' | 'business';
+  square_meters?: number;
+  business_features?: string[];
   features: string[];
   photos: string[];
   created_at: string;
@@ -72,5 +75,6 @@ export interface SearchFilters {
   maxPrice?: number;
   bedrooms?: number;
   propertyType?: string;
+  type?: 'residential' | 'business';
   features?: string[];
 }

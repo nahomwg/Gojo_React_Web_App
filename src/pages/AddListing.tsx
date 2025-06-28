@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Home, DollarSign, Bed, Bath, Maximize, Building2, Star, Wifi, Car, Shield, Zap, Briefcase } from 'lucide-react';
+import { ArrowLeft, MapPin, Home, DollarSign, Bed, Bath, Maximize, Building2, Star, Wifi, Car, Shield, Zap, Briefcase, Users, Clock, Printer, Coffee } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PhotoUpload from '../components/Upload/PhotoUpload';
 import LocationPicker from '../components/Maps/LocationPicker';
@@ -15,8 +15,11 @@ interface ListingFormData {
   bedrooms: string;
   bathrooms: string;
   area_sqm: string;
+  square_meters: string;
   property_type: string;
+  type: 'residential' | 'business';
   features: string[];
+  business_features: string[];
   photos: string[];
   coordinates: { lat: number; lng: number } | null;
 }
@@ -34,8 +37,11 @@ const AddListing = () => {
     bedrooms: '',
     bathrooms: '',
     area_sqm: '',
+    square_meters: '',
     property_type: 'apartment',
+    type: 'residential',
     features: [],
+    business_features: [],
     photos: [],
     coordinates: null
   });
@@ -70,6 +76,15 @@ const AddListing = () => {
     }));
   };
 
+  const toggleBusinessFeature = (feature: string) => {
+    setFormData(prev => ({
+      ...prev,
+      business_features: prev.business_features.includes(feature)
+        ? prev.business_features.filter(f => f !== feature)
+        : [...prev.business_features, feature]
+    }));
+  };
+
   const handleLocationSelect = (location: { address: string; lat: number; lng: number }) => {
     setFormData(prev => ({
       ...prev,
@@ -83,22 +98,34 @@ const AddListing = () => {
     setError('');
 
     try {
+      const listingData: any = {
+        title: formData.title,
+        description: formData.description,
+        location: formData.location,
+        subcity: formData.subcity,
+        price: parseInt(formData.price),
+        bedrooms: parseInt(formData.bedrooms),
+        bathrooms: parseInt(formData.bathrooms),
+        property_type: formData.property_type,
+        type: formData.type,
+        features: formData.features,
+        photos: formData.photos,
+        user_id: user.id
+      };
+
+      // Add type-specific fields
+      if (formData.type === 'residential') {
+        if (formData.area_sqm) {
+          listingData.area_sqm = parseFloat(formData.area_sqm);
+        }
+      } else {
+        listingData.square_meters = parseInt(formData.square_meters);
+        listingData.business_features = formData.business_features;
+      }
+
       const { data, error } = await supabase
         .from('listings')
-        .insert({
-          title: formData.title,
-          description: formData.description,
-          location: formData.location,
-          subcity: formData.subcity,
-          price: parseInt(formData.price),
-          bedrooms: parseInt(formData.bedrooms),
-          bathrooms: parseInt(formData.bathrooms),
-          area_sqm: parseFloat(formData.area_sqm),
-          property_type: formData.property_type,
-          features: formData.features,
-          photos: formData.photos,
-          user_id: user.id
-        });
+        .insert(listingData);
 
       if (error) throw error;
 
@@ -129,7 +156,7 @@ const AddListing = () => {
     'Kirkos', 'Kolfe Keranio', 'Lideta', 'Nifas Silk-Lafto', 'Yeka'
   ];
 
-  const commonFeatures = [
+  const residentialFeatures = [
     { name: 'WiFi', icon: Wifi },
     { name: 'Parking', icon: Car },
     { name: 'Security', icon: Shield },
@@ -144,6 +171,21 @@ const AddListing = () => {
     { name: 'Laundry', icon: Home }
   ];
 
+  const businessFeatures = [
+    { name: 'High-Speed Internet', icon: Wifi },
+    { name: 'Parking Spaces', icon: Car },
+    { name: '24/7 Security', icon: Shield },
+    { name: 'Backup Generator', icon: Zap },
+    { name: 'Conference Rooms', icon: Users },
+    { name: 'Reception Area', icon: Building2 },
+    { name: 'Air Conditioning', icon: Home },
+    { name: 'Elevator Access', icon: Building2 },
+    { name: 'Flexible Hours', icon: Clock },
+    { name: 'Printing Services', icon: Printer },
+    { name: 'Kitchen/Break Room', icon: Coffee },
+    { name: 'Storage Space', icon: Building2 }
+  ];
+
   const steps = [
     { id: 1, title: 'Property Category', description: 'Choose between residential or commercial' },
     { id: 2, title: 'Property Type', description: 'Select the specific type of property' },
@@ -156,18 +198,22 @@ const AddListing = () => {
 
   const canProceed = () => {
     switch (currentStep) {
-      case 1: return true; // Category selection is handled by step 2
+      case 1: return formData.type;
       case 2: return formData.property_type;
       case 3: return formData.location && formData.subcity;
-      case 4: return formData.title && formData.description && formData.bedrooms && formData.bathrooms && formData.area_sqm;
+      case 4: 
+        const basicFields = formData.title && formData.description && formData.bathrooms;
+        if (formData.type === 'residential') {
+          return basicFields && formData.bedrooms;
+        } else {
+          return basicFields && formData.square_meters;
+        }
       case 5: return true; // Features are optional
       case 6: return formData.photos.length > 0;
       case 7: return formData.price;
       default: return false;
     }
   };
-
-  const isResidential = ['apartment', 'house', 'villa', 'condominium', 'studio'].includes(formData.property_type);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -230,11 +276,12 @@ const AddListing = () => {
           {currentStep === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <button
-                onClick={() => {
-                  setFormData(prev => ({ ...prev, property_type: 'apartment' }));
-                  setCurrentStep(2);
-                }}
-                className="p-8 rounded-2xl border-2 border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-all duration-200 text-left group"
+                onClick={() => setFormData(prev => ({ ...prev, type: 'residential', property_type: 'apartment' }))}
+                className={`p-8 rounded-2xl border-2 transition-all duration-200 text-left group ${
+                  formData.type === 'residential'
+                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500'
+                }`}
               >
                 <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform duration-200">
                   <Home className="h-8 w-8 text-green-600 dark:text-green-400" />
@@ -244,16 +291,17 @@ const AddListing = () => {
               </button>
 
               <button
-                onClick={() => {
-                  setFormData(prev => ({ ...prev, property_type: 'office' }));
-                  setCurrentStep(2);
-                }}
-                className="p-8 rounded-2xl border-2 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-200 text-left group"
+                onClick={() => setFormData(prev => ({ ...prev, type: 'business', property_type: 'office' }))}
+                className={`p-8 rounded-2xl border-2 transition-all duration-200 text-left group ${
+                  formData.type === 'business'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
+                }`}
               >
                 <div className="p-4 bg-blue-100 dark:bg-blue-900/30 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform duration-200">
                   <Briefcase className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Commercial Property</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Business Property</h3>
                 <p className="text-gray-600 dark:text-gray-400">Offices, shops, warehouses, and other commercial spaces for business use</p>
               </button>
             </div>
@@ -262,7 +310,7 @@ const AddListing = () => {
           {/* Step 2: Property Type */}
           {currentStep === 2 && (
             <div className="space-y-8">
-              {isResidential ? (
+              {formData.type === 'residential' ? (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <Home className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -290,7 +338,7 @@ const AddListing = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                     <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    Commercial Properties
+                    Business Properties
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {commercialTypes.map((type) => (
@@ -358,7 +406,7 @@ const AddListing = () => {
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
-                  placeholder={isResidential ? "e.g., Modern 2-Bedroom Apartment in Bole" : "e.g., Professional Office Space in CMC"}
+                  placeholder={formData.type === 'residential' ? "e.g., Modern 2-Bedroom Apartment in Bole" : "e.g., Professional Office Space in CMC"}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
@@ -378,72 +426,150 @@ const AddListing = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Bed className="h-4 w-4 inline mr-1" />
-                    {isResidential ? 'Bedrooms' : 'Rooms'} *
-                  </label>
-                  <input
-                    type="number"
-                    name="bedrooms"
-                    value={formData.bedrooms}
-                    onChange={handleInputChange}
-                    min="0"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
+                {formData.type === 'residential' ? (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <Bed className="h-4 w-4 inline mr-1" />
+                        Bedrooms *
+                      </label>
+                      <input
+                        type="number"
+                        name="bedrooms"
+                        value={formData.bedrooms}
+                        onChange={handleInputChange}
+                        min="0"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Bath className="h-4 w-4 inline mr-1" />
-                    Bathrooms *
-                  </label>
-                  <input
-                    type="number"
-                    name="bathrooms"
-                    value={formData.bathrooms}
-                    onChange={handleInputChange}
-                    min="0"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <Bath className="h-4 w-4 inline mr-1" />
+                        Bathrooms *
+                      </label>
+                      <input
+                        type="number"
+                        name="bathrooms"
+                        value={formData.bathrooms}
+                        onChange={handleInputChange}
+                        min="0"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <Maximize className="h-4 w-4 inline mr-1" />
-                    Area (m²) *
-                  </label>
-                  <input
-                    type="number"
-                    name="area_sqm"
-                    value={formData.area_sqm}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="0.1"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <Maximize className="h-4 w-4 inline mr-1" />
+                        Area (m²)
+                      </label>
+                      <input
+                        type="number"
+                        name="area_sqm"
+                        value={formData.area_sqm}
+                        onChange={handleInputChange}
+                        min="0"
+                        step="0.1"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <Building2 className="h-4 w-4 inline mr-1" />
+                        Rooms/Spaces
+                      </label>
+                      <input
+                        type="number"
+                        name="bedrooms"
+                        value={formData.bedrooms}
+                        onChange={handleInputChange}
+                        min="0"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <Bath className="h-4 w-4 inline mr-1" />
+                        Bathrooms *
+                      </label>
+                      <input
+                        type="number"
+                        name="bathrooms"
+                        value={formData.bathrooms}
+                        onChange={handleInputChange}
+                        min="0"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <Maximize className="h-4 w-4 inline mr-1" />
+                        Square Meters *
+                      </label>
+                      <input
+                        type="number"
+                        name="square_meters"
+                        value={formData.square_meters}
+                        onChange={handleInputChange}
+                        min="0"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
 
           {/* Step 5: Features */}
           {currentStep === 5 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {commonFeatures.map((feature) => (
-                <button
-                  key={feature.name}
-                  onClick={() => toggleFeature(feature.name)}
-                  className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                    formData.features.includes(feature.name)
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                  }`}
-                >
-                  <feature.icon className="h-6 w-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{feature.name}</p>
-                </button>
-              ))}
+            <div className="space-y-8">
+              {formData.type === 'residential' ? (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Residential Features</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {residentialFeatures.map((feature) => (
+                      <button
+                        key={feature.name}
+                        onClick={() => toggleFeature(feature.name)}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                          formData.features.includes(feature.name)
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <feature.icon className="h-6 w-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{feature.name}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Business Features</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {businessFeatures.map((feature) => (
+                      <button
+                        key={feature.name}
+                        onClick={() => toggleBusinessFeature(feature.name)}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                          formData.business_features.includes(feature.name)
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <feature.icon className="h-6 w-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{feature.name}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -479,7 +605,7 @@ const AddListing = () => {
                   onChange={handleInputChange}
                   min="0"
                   step="100"
-                  placeholder={isResidential ? "15000" : "25000"}
+                  placeholder={formData.type === 'residential' ? "15000" : "25000"}
                   className="w-full pl-16 pr-4 py-4 text-2xl font-semibold text-center border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
