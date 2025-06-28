@@ -1,16 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { authClient } from '../lib/auth-client';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-
-interface User {
-  id: string;
-  role: 'agent' | 'renter';
-  name: string;
-  phone: string;
-  photo_url?: string;
-  email: string;
-  created_at: string;
-}
+import { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -37,17 +28,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     console.log('🔄 AuthProvider: Initializing auth state...');
+    
+    // Get initial session
     initializeAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔄 Auth state changed:', event, session?.user?.id);
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('✅ User signed in, fetching profile...');
+          await fetchUserProfile(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          console.log('👋 User signed out');
+          setUser(null);
+          setLoading(false);
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          console.log('🔄 Token refreshed, ensuring profile is loaded...');
+          if (!user) {
+            await fetchUserProfile(session.user.id);
+          }
+        }
+      }
+    );
+
+    return () => {
+      console.log('🧹 Cleaning up auth subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const initializeAuth = async () => {
     try {
       console.log('🔍 Checking for existing session...');
-      const session = await authClient.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (session.data?.user) {
-        console.log('✅ Found existing session for user:', session.data.user.id);
-        await fetchUserProfile(session.data.user.id);
+      if (error) {
+        console.error('❌ Error getting session:', error);
+        setLoading(false);
+        return;
+      }
+
+      if (session?.user) {
+        console.log('✅ Found existing session for user:', session.user.id);
+        await fetchUserProfile(session.user.id);
       } else {
         console.log('ℹ️ No existing session found');
         setLoading(false);
@@ -98,29 +123,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     
     try {
-      // Validate inputs
-      if (!email.trim() || !password) {
-        throw new Error('Email and password are required');
-      }
-
-      const result = await authClient.signIn.email({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       
-      if (result.error) {
-        console.error('❌ Sign in error:', result.error);
-        throw new Error(result.error.message || 'Failed to sign in');
+      if (error) {
+        console.error('❌ Sign in error:', error);
+        throw new Error(error.message);
       }
       
-      if (!result.data?.user) {
-        throw new Error('No user data returned during sign in');
+      if (!data.session || !data.user) {
+        throw new Error('No session created during sign in');
       }
 
-      console.log('✅ Sign in successful for user:', result.data.user.id);
+      console.log('✅ Sign in successful for user:', data.user.id);
       
-      // Fetch the user profile from our users table
-      await fetchUserProfile(result.data.user.id);
+      // Wait a moment for the session to be fully established
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Fetch the user profile
+      await fetchUserProfile(data.user.id);
       
     } catch (error) {
       console.error('❌ Sign in failed:', error);
@@ -143,50 +166,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Password must be at least 6 characters long');
       }
 
-      // Create auth user with BetterAuth
-      const result = await authClient.signUp.email({
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        name: name.trim(),
-        phone: phone.trim(),
-        role,
+        options: {
+          emailRedirectTo: undefined // Disable email confirmation
+        }
       });
 
-      if (result.error) {
-        console.error('❌ Auth signup error:', result.error);
-        throw new Error(result.error.message || 'Failed to create account');
+      if (authError) {
+        console.error('❌ Auth signup error:', authError);
+        throw new Error(authError.message);
       }
 
-      if (!result.data?.user) {
+      if (!authData.user) {
         throw new Error('No user created during signup');
       }
 
-      console.log('✅ Auth user created:', result.data.user.id);
+      console.log('✅ Auth user created:', authData.user.id);
 
-      // Create profile in our users table
-      console.log('📋 Creating user profile...');
-      
-      const { data: profileData, error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: result.data.user.id,
-          role,
-          name: name.trim(),
-          phone: phone.trim(),
-          photo_url: null,
-        })
-        .select()
-        .single();
+      // If we have a session, create the profile
+      if (authData.session) {
+        console.log('📋 Creating user profile...');
+        
+        const { data: profileData, error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            role,
+            name: name.trim(),
+            phone: phone.trim(),
+          })
+          .select()
+          .single();
 
-      if (profileError) {
-        console.error('❌ Profile creation error:', profileError);
-        // Try to clean up auth user if profile creation fails
-        await authClient.signOut();
-        throw new Error(`Failed to create profile: ${profileError.message}`);
+        if (profileError) {
+          console.error('❌ Profile creation error:', profileError);
+          // Clean up auth user if profile creation fails
+          await supabase.auth.signOut();
+          throw new Error(`Failed to create profile: ${profileError.message}`);
+        }
+        
+        console.log('✅ User profile created:', profileData);
+        setUser(profileData);
+      } else {
+        throw new Error('No session created during signup - email confirmation may be required');
       }
-      
-      console.log('✅ User profile created:', profileData);
-      setUser(profileData);
       
     } catch (error) {
       console.error('❌ Signup failed:', error);
@@ -200,10 +226,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     
     try {
-      const result = await authClient.signOut();
-      if (result.error) {
-        console.error('❌ Sign out error:', result.error);
-        throw new Error(result.error.message || 'Failed to sign out');
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('❌ Sign out error:', error);
+        throw error;
       }
       
       console.log('✅ Sign out successful');

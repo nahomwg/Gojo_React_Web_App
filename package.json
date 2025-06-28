@@ -12,9 +12,6 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.3",
     "@googlemaps/js-api-loader": "^1.16.2",
-    "better-auth": "^0.7.1",
-    "better-auth/client": "^0.7.1",
-    "better-auth/plugins": "^0.7.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.20.1",
