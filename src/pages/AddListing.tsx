@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Home, DollarSign, Bed, Bath, Maximize, Building2, Star, Wifi, Car, Shield, Zap } from 'lucide-react';
+import { ArrowLeft, MapPin, Home, DollarSign, Bed, Bath, Maximize, Building2, Star, Wifi, Car, Shield, Zap, Briefcase } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import PhotoUpload from '../components/Upload/PhotoUpload';
 import LocationPicker from '../components/Maps/LocationPicker';
@@ -44,8 +44,8 @@ const AddListing = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -110,15 +110,18 @@ const AddListing = () => {
     }
   };
 
-  const propertyTypes = [
-    { value: 'apartment', label: 'Apartment', icon: Building2 },
-    { value: 'house', label: 'House', icon: Home },
-    { value: 'villa', label: 'Villa', icon: Star },
-    { value: 'condominium', label: 'Condominium', icon: Building2 },
-    { value: 'office', label: 'Office Space', icon: Building2 },
-    { value: 'shop', label: 'Shop/Retail', icon: Building2 },
-    { value: 'warehouse', label: 'Warehouse', icon: Building2 },
-    { value: 'studio', label: 'Studio', icon: Home }
+  const residentialTypes = [
+    { value: 'apartment', label: 'Apartment', icon: Building2, description: 'Multi-unit residential building' },
+    { value: 'house', label: 'House', icon: Home, description: 'Single-family detached home' },
+    { value: 'villa', label: 'Villa', icon: Star, description: 'Luxury residential property' },
+    { value: 'condominium', label: 'Condominium', icon: Building2, description: 'Owned unit in shared building' },
+    { value: 'studio', label: 'Studio', icon: Home, description: 'Single-room living space' }
+  ];
+
+  const commercialTypes = [
+    { value: 'office', label: 'Office Space', icon: Briefcase, description: 'Professional workspace' },
+    { value: 'shop', label: 'Retail Shop', icon: Building2, description: 'Commercial retail space' },
+    { value: 'warehouse', label: 'Warehouse', icon: Building2, description: 'Storage and distribution facility' }
   ];
 
   const subcities = [
@@ -142,25 +145,29 @@ const AddListing = () => {
   ];
 
   const steps = [
-    { id: 1, title: 'Property Type', description: 'What type of property are you listing?' },
-    { id: 2, title: 'Location', description: 'Where is your property located?' },
-    { id: 3, title: 'Property Details', description: 'Tell us about your property' },
-    { id: 4, title: 'Features', description: 'What amenities does your property have?' },
-    { id: 5, title: 'Photos', description: 'Add photos of your property' },
-    { id: 6, title: 'Pricing', description: 'Set your rental price' }
+    { id: 1, title: 'Property Category', description: 'Choose between residential or commercial' },
+    { id: 2, title: 'Property Type', description: 'Select the specific type of property' },
+    { id: 3, title: 'Location', description: 'Where is your property located?' },
+    { id: 4, title: 'Property Details', description: 'Tell us about your property' },
+    { id: 5, title: 'Features & Amenities', description: 'What amenities does your property have?' },
+    { id: 6, title: 'Photos', description: 'Add photos of your property' },
+    { id: 7, title: 'Pricing', description: 'Set your rental price' }
   ];
 
   const canProceed = () => {
     switch (currentStep) {
-      case 1: return formData.property_type;
-      case 2: return formData.location && formData.subcity;
-      case 3: return formData.title && formData.description && formData.bedrooms && formData.bathrooms && formData.area_sqm;
-      case 4: return true; // Features are optional
-      case 5: return formData.photos.length > 0;
-      case 6: return formData.price;
+      case 1: return true; // Category selection is handled by step 2
+      case 2: return formData.property_type;
+      case 3: return formData.location && formData.subcity;
+      case 4: return formData.title && formData.description && formData.bedrooms && formData.bathrooms && formData.area_sqm;
+      case 5: return true; // Features are optional
+      case 6: return formData.photos.length > 0;
+      case 7: return formData.price;
       default: return false;
     }
   };
+
+  const isResidential = ['apartment', 'house', 'villa', 'condominium', 'studio'].includes(formData.property_type);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -195,7 +202,7 @@ const AddListing = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-2 bg-gray-200 dark:bg-gray-700">
             <div 
-              className="h-full bg-gradient-to-r from-rose-500 to-pink-600 transition-all duration-300"
+              className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300"
               style={{ width: `${(currentStep / steps.length) * 100}%` }}
             />
           </div>
@@ -219,28 +226,96 @@ const AddListing = () => {
             </p>
           </div>
 
-          {/* Step 1: Property Type */}
+          {/* Step 1: Property Category */}
           {currentStep === 1 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {propertyTypes.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => setFormData(prev => ({ ...prev, property_type: type.value }))}
-                  className={`p-6 rounded-xl border-2 transition-all duration-200 ${
-                    formData.property_type === type.value
-                      ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                  }`}
-                >
-                  <type.icon className="h-8 w-8 mx-auto mb-3 text-gray-600 dark:text-gray-400" />
-                  <p className="font-medium text-gray-900 dark:text-white">{type.label}</p>
-                </button>
-              ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <button
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, property_type: 'apartment' }));
+                  setCurrentStep(2);
+                }}
+                className="p-8 rounded-2xl border-2 border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-all duration-200 text-left group"
+              >
+                <div className="p-4 bg-green-100 dark:bg-green-900/30 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform duration-200">
+                  <Home className="h-8 w-8 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Residential Property</h3>
+                <p className="text-gray-600 dark:text-gray-400">Apartments, houses, villas, and other residential spaces for long-term living</p>
+              </button>
+
+              <button
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, property_type: 'office' }));
+                  setCurrentStep(2);
+                }}
+                className="p-8 rounded-2xl border-2 border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-200 text-left group"
+              >
+                <div className="p-4 bg-blue-100 dark:bg-blue-900/30 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform duration-200">
+                  <Briefcase className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Commercial Property</h3>
+                <p className="text-gray-600 dark:text-gray-400">Offices, shops, warehouses, and other commercial spaces for business use</p>
+              </button>
             </div>
           )}
 
-          {/* Step 2: Location */}
+          {/* Step 2: Property Type */}
           {currentStep === 2 && (
+            <div className="space-y-8">
+              {isResidential ? (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Home className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    Residential Properties
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {residentialTypes.map((type) => (
+                      <button
+                        key={type.value}
+                        onClick={() => setFormData(prev => ({ ...prev, property_type: type.value }))}
+                        className={`p-6 rounded-xl border-2 transition-all duration-200 ${
+                          formData.property_type === type.value
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <type.icon className="h-6 w-6 mx-auto mb-3 text-gray-600 dark:text-gray-400" />
+                        <p className="font-medium text-gray-900 dark:text-white text-sm">{type.label}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{type.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Briefcase className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    Commercial Properties
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {commercialTypes.map((type) => (
+                      <button
+                        key={type.value}
+                        onClick={() => setFormData(prev => ({ ...prev, property_type: type.value }))}
+                        className={`p-6 rounded-xl border-2 transition-all duration-200 ${
+                          formData.property_type === type.value
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <type.icon className="h-6 w-6 mx-auto mb-3 text-gray-600 dark:text-gray-400" />
+                        <p className="font-medium text-gray-900 dark:text-white">{type.label}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{type.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Location */}
+          {currentStep === 3 && (
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -250,7 +325,7 @@ const AddListing = () => {
                   name="subcity"
                   value={formData.subcity}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">Select Subcity</option>
                   {subcities.map(subcity => (
@@ -271,8 +346,8 @@ const AddListing = () => {
             </div>
           )}
 
-          {/* Step 3: Property Details */}
-          {currentStep === 3 && (
+          {/* Step 4: Property Details */}
+          {currentStep === 4 && (
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -283,8 +358,8 @@ const AddListing = () => {
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
-                  placeholder="e.g., Modern 2-Bedroom Apartment in Bole"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder={isResidential ? "e.g., Modern 2-Bedroom Apartment in Bole" : "e.g., Professional Office Space in CMC"}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -298,7 +373,7 @@ const AddListing = () => {
                   onChange={handleInputChange}
                   rows={4}
                   placeholder="Describe your property in detail..."
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
 
@@ -306,7 +381,7 @@ const AddListing = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <Bed className="h-4 w-4 inline mr-1" />
-                    Bedrooms *
+                    {isResidential ? 'Bedrooms' : 'Rooms'} *
                   </label>
                   <input
                     type="number"
@@ -314,7 +389,7 @@ const AddListing = () => {
                     value={formData.bedrooms}
                     onChange={handleInputChange}
                     min="0"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
 
@@ -329,7 +404,7 @@ const AddListing = () => {
                     value={formData.bathrooms}
                     onChange={handleInputChange}
                     min="0"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
 
@@ -345,15 +420,15 @@ const AddListing = () => {
                     onChange={handleInputChange}
                     min="0"
                     step="0.1"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 4: Features */}
-          {currentStep === 4 && (
+          {/* Step 5: Features */}
+          {currentStep === 5 && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {commonFeatures.map((feature) => (
                 <button
@@ -361,7 +436,7 @@ const AddListing = () => {
                   onClick={() => toggleFeature(feature.name)}
                   className={`p-4 rounded-xl border-2 transition-all duration-200 ${
                     formData.features.includes(feature.name)
-                      ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/20'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
                 >
@@ -372,19 +447,19 @@ const AddListing = () => {
             </div>
           )}
 
-          {/* Step 5: Photos */}
-          {currentStep === 5 && (
+          {/* Step 6: Photos */}
+          {currentStep === 6 && (
             <PhotoUpload
               photos={formData.photos}
               onPhotosChange={(photos) => setFormData(prev => ({ ...prev, photos }))}
             />
           )}
 
-          {/* Step 6: Pricing */}
-          {currentStep === 6 && (
+          {/* Step 7: Pricing */}
+          {currentStep === 7 && (
             <div className="max-w-md mx-auto">
               <div className="text-center mb-8">
-                <DollarSign className="h-16 w-16 text-rose-500 mx-auto mb-4" />
+                <DollarSign className="h-16 w-16 text-blue-500 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   Set your monthly rent
                 </h3>
@@ -404,8 +479,8 @@ const AddListing = () => {
                   onChange={handleInputChange}
                   min="0"
                   step="100"
-                  placeholder="15000"
-                  className="w-full pl-16 pr-4 py-4 text-2xl font-semibold text-center border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder={isResidential ? "15000" : "25000"}
+                  className="w-full pl-16 pr-4 py-4 text-2xl font-semibold text-center border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
                 <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
                   /month
@@ -428,7 +503,7 @@ const AddListing = () => {
               <button
                 onClick={() => setCurrentStep(currentStep + 1)}
                 disabled={!canProceed()}
-                className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 Next
               </button>
@@ -436,7 +511,7 @@ const AddListing = () => {
               <button
                 onClick={handleSubmit}
                 disabled={!canProceed() || submitting}
-                className="px-8 py-3 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {submitting ? 'Publishing...' : 'Publish Listing'}
               </button>

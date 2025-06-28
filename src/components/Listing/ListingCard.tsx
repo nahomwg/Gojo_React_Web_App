@@ -52,55 +52,72 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
     }
   };
 
+  const getPropertyTypeColor = (type: string) => {
+    const residential = ['apartment', 'house', 'villa', 'studio', 'condominium'];
+    const commercial = ['office', 'shop', 'warehouse'];
+    
+    if (residential.includes(type)) {
+      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+    }
+    if (commercial.includes(type)) {
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+    }
+    return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+  };
+
+  const getPropertyTypeIcon = (type: string) => {
+    const residential = ['apartment', 'house', 'villa', 'studio', 'condominium'];
+    return residential.includes(type) ? '🏠' : '🏢';
+  };
+
   return (
-    <div className="group bg-white dark:bg-gray-800 rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transform hover:scale-[1.02]">
+    <div className="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50 overflow-hidden transform hover:scale-[1.02]">
       {/* Image */}
       <div className="relative overflow-hidden">
         <img
           src={listing.photos[0] || 'https://images.pexels.com/photos/1115804/pexels-photo-1115804.jpeg'}
           alt={listing.title}
-          className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+          className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-500"
         />
         
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         
         {/* Save button for renters */}
         {user && user.role === 'renter' && (
           <button
             onClick={handleSaveToggle}
             disabled={saving}
-            className={`absolute top-4 right-4 p-3 rounded-full backdrop-blur-sm transition-all duration-300 transform hover:scale-110 ${
+            className={`absolute top-4 right-4 p-2.5 rounded-full backdrop-blur-sm transition-all duration-300 transform hover:scale-110 ${
               isSaved 
                 ? 'bg-red-500 text-white shadow-lg' 
                 : 'bg-white/90 text-gray-600 hover:bg-white hover:shadow-lg'
             }`}
           >
-            <Heart className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
+            <Heart className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
           </button>
         )}
 
         {/* Property Type Badge */}
         {listing.property_type && (
           <div className="absolute top-4 left-4">
-            <span className="bg-gradient-to-r from-rose-500 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-medium capitalize backdrop-blur-sm shadow-lg">
-              {listing.property_type}
+            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize backdrop-blur-sm shadow-lg ${getPropertyTypeColor(listing.property_type)}`}>
+              {getPropertyTypeIcon(listing.property_type)} {listing.property_type}
             </span>
           </div>
         )}
 
-        {/* Rating Badge */}
-        <div className="absolute bottom-4 left-4">
-          <div className="flex items-center gap-1 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg">
-            <Star className="h-4 w-4 text-yellow-400 fill-current" />
-            <span className="text-sm font-semibold text-gray-900 dark:text-white">4.8</span>
-          </div>
-        </div>
-
         {/* Price */}
         <div className="absolute bottom-4 right-4">
-          <span className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm text-gray-900 dark:text-white px-4 py-2 rounded-full text-lg font-bold shadow-lg">
+          <span className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm text-gray-900 dark:text-white px-3 py-2 rounded-xl text-sm font-bold shadow-lg">
             {formatPrice(listing.price)}/month
+          </span>
+        </div>
+
+        {/* Duration Badge */}
+        <div className="absolute bottom-4 left-4">
+          <span className="bg-blue-600/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-xl text-xs font-medium shadow-lg">
+            Long-term
           </span>
         </div>
       </div>
@@ -108,13 +125,13 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
       {/* Content */}
       <div className="p-6">
         <Link to={`/listing/${listing.id}`} className="block group/link">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover/link:text-rose-600 dark:group-hover/link:text-rose-400 transition-colors duration-200 line-clamp-2">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3 group-hover/link:text-blue-600 dark:group-hover/link:text-blue-400 transition-colors duration-200 line-clamp-2">
             {listing.title}
           </h3>
         </Link>
 
         <div className="flex items-center text-gray-600 dark:text-gray-400 mb-4">
-          <MapPin className="h-5 w-5 mr-2 flex-shrink-0 text-rose-500" />
+          <MapPin className="h-4 w-4 mr-2 flex-shrink-0 text-blue-500" />
           <span className="text-sm font-medium">
             {listing.subcity && `${listing.subcity}, `}{listing.location}
           </span>
@@ -123,18 +140,18 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
-              <Bed className="h-4 w-4 text-blue-500" />
+              <Bed className="h-4 w-4 text-green-500" />
               <span className="font-medium">{listing.bedrooms} bed</span>
             </div>
             {listing.bathrooms && (
               <div className="flex items-center gap-1">
-                <Bath className="h-4 w-4 text-cyan-500" />
+                <Bath className="h-4 w-4 text-blue-500" />
                 <span className="font-medium">{listing.bathrooms} bath</span>
               </div>
             )}
             {listing.area_sqm && (
               <div className="flex items-center gap-1">
-                <Maximize className="h-4 w-4 text-green-500" />
+                <Maximize className="h-4 w-4 text-purple-500" />
                 <span className="font-medium">{listing.area_sqm}m²</span>
               </div>
             )}
@@ -151,13 +168,13 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
             {listing.features.slice(0, 3).map((feature, index) => (
               <span
                 key={index}
-                className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-full text-xs font-medium"
+                className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-lg text-xs font-medium"
               >
                 {feature}
               </span>
             ))}
             {listing.features.length > 3 && (
-              <span className="text-xs text-gray-500 dark:text-gray-400 px-3 py-1">
+              <span className="text-xs text-gray-500 dark:text-gray-400 px-2.5 py-1">
                 +{listing.features.length - 3} more
               </span>
             )}
@@ -171,11 +188,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
               <img
                 src={listing.user.photo_url}
                 alt={listing.user.name}
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
+                className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
               />
             ) : (
-              <div className="w-10 h-10 bg-gradient-to-br from-rose-500 to-pink-600 rounded-full flex items-center justify-center">
-                <User className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                <User className="h-4 w-4 text-white" />
               </div>
             )}
             <div className="text-sm">
@@ -188,14 +205,14 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onSaveToggle, isSave
             {user && user.role === 'renter' && (
               <Link
                 to={`/message/${listing.user_id}?listing=${listing.id}`}
-                className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all duration-200 transform hover:scale-110"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200 transform hover:scale-110"
               >
-                <MessageCircle className="h-5 w-5" />
+                <MessageCircle className="h-4 w-4" />
               </Link>
             )}
             <Link
               to={`/listing/${listing.id}`}
-              className="bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               View Details
             </Link>
